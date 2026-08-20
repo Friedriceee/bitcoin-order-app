@@ -1,0 +1,43 @@
+name: OWASP ZAP Scan
+
+on:
+  push:
+    branches: [githubcicd]
+  workflow_dispatch:
+
+concurrency:
+  group: zap-scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run OWASP ZAP baseline scan
+        run: |
+          chmod 777 "$PWD"
+          docker pull ghcr.io/zaproxy/zaproxy:stable
+          docker run --rm \
+            -v "$PWD:/zap/wrk/:rw" \
+            -t ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t "https://friedriceee.github.io/bitcoin-order-app/" \
+            -r zap_baseline_report.html \
+            -J zap_baseline_report.json \
+            -I || true
+
+      - name: Verify ZAP report
+        run: test -f zap_baseline_report.html
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap report
+          path: |
+            zap_baseline_report.html
+            zap_baseline_report.json
+          if-no-files-found: error
