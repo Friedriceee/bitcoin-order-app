@@ -52,6 +52,15 @@ jobs:
         with:
           path: dist/bitcoin
 
+  report-build-status:
+    name: Report build status
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Report successful build
+        run: echo "Build, tests, and artifact upload completed successfully."
+
   deploy:
     name: Deploy to GitHub Pages
     environment:
